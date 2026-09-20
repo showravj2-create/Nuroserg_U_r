@@ -1,0 +1,39 @@
+seed: 42
+
+experiment: brats_2p5d_unet
+
+model:
+in_channels: 12
+out_channels: 3
+base_channels: 32
+dropout: 0.15
+attention: true
+
+training:
+epochs: 100
+batch_size: 2
+lr: 0.0002
+weight_decay: 0.00001
+device: cuda
+amp: true
+
+data:
+ root: /path/to/BraTS
+ modalities:
+ - t1n
+ - t1c
+ - t2w
+ - t2f
+ num_slices_context: 3
+ target_size:
+ - 240
+ - 240
+ train_fraction: 0.70
+ val_fraction: 0.15
+ test_fraction: 0.15
+ modality_dropout: 0.10
+
+loss:
+  dice_weight: 1.0
+  bce_weight: 0.5
+  boundary_weight: 0.2
