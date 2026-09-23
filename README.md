@@ -14,9 +14,9 @@ NeuroSeg-U is a reproducible research framework for **brain tumor segmentation f
 3. Test-time augmentation and uncertainty maps identify clinically ambiguous regions and correlate with segmentation error.
 4. A carefully controlled 2D/2.5D U-Net provides a useful, reproducible baseline against which stronger 3D methods can be compared.
 
-## Why this is research-oriented
+##  Research-orientation
 
-This repository treats segmentation as an **experimental study**, not merely a model demo:
+This repo treats segmentation as an **experimental study**, not merely a model demo:
 
 - patient-level train/validation/test splitting
 - reproducible seeds and experiment configs
@@ -87,8 +87,8 @@ Research report
 ## Quick start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/neuroseg-u
-cd neuroseg-u
+git clone https://github.com/showravj2-create/Nuroserg_U_r
+cd Neuroseg-u-R
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
@@ -195,6 +195,4 @@ This project is for research and educational use. Segmentation outputs can be wr
 
 ## Author
 
-**Your Name** — BSc (Hons) Mathematics | Aspiring ML/Medical Imaging Researcher
-
-This repository is intentionally structured to demonstrate research engineering, experimental discipline, and mathematical understanding rather than simply model complexity.
+**Showrav Das** — BSc (Hons) Mathematics | Aspiring ML/Medical Imaging Researcher
