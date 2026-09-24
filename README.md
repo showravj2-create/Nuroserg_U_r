@@ -88,11 +88,20 @@ Research report
 
 ```bash
 git clone https://github.com/showravj2-create/Nuroserg_U_r
-cd Neuroseg-u-R
+cd Nuroserg_U_r
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 ```
+
+### BraTS 2020-ready workflow
+
+This repo now supports real BraTS 2020 MRI datasets, legacy lab-style naming, and Colab/cloud workflows.
+
+- Run dataset validation: `python scripts/check_brats_dataset.py --data-root /path/to/BraTS2020`
+- Train on BraTS: `python scripts/train.py --config configs/brats_2p5d.yaml`
+- Colab-friendly runner: `python colab_run.py --dataset-root /content/BraTS2020 --config configs/brats_2p5d.yaml`
+- V2 project snapshot: see [v2/README.md](v2/README.md)
 
 Run the unit tests:
 
