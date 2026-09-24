@@ -1,23 +1,21 @@
 import argparse
+import sys
+from pathlib import Path
 
 import torch
 import yaml
 
 from torch.utils.data import DataLoader
 
-from src.data.synthetic import (
-    SyntheticSegmentationDataset
-)
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
+from src.data.brats import Brats2020Dataset
+from src.data.synthetic import SyntheticSegmentationDataset
 from src.models.unet import UNet
-
-from src.losses.segmentation import (
-    CompositeSegmentationLoss
-)
-
-from src.metrics.segmentation import (
-    dice_score
-)
+from src.losses.segmentation import CompositeSegmentationLoss
+from src.metrics.segmentation import dice_score
 
 
 def evaluate(
@@ -118,34 +116,48 @@ def main():
     # DATA
     # --------------------------------------------------
 
-    train_dataset = (
-        SyntheticSegmentationDataset(
-            size=cfg["data"]["image_size"],
+    data_cfg = cfg["data"]
+    if data_cfg.get("synthetic", False):
+        train_dataset = SyntheticSegmentationDataset(
+            size=data_cfg["image_size"],
             channels=cfg["model"]["in_channels"],
-            length=cfg["data"]["train_samples"],
-            seed=cfg["seed"]
+            length=data_cfg["train_samples"],
+            seed=cfg["seed"],
         )
-    )
-
-    val_dataset = (
-        SyntheticSegmentationDataset(
-            size=cfg["data"]["image_size"],
+        val_dataset = SyntheticSegmentationDataset(
+            size=data_cfg["image_size"],
             channels=cfg["model"]["in_channels"],
-            length=cfg["data"]["val_samples"],
-            seed=cfg["seed"] + 10000
+            length=data_cfg["val_samples"],
+            seed=cfg["seed"] + 10000,
         )
-    )
+    else:
+        train_dataset = Brats2020Dataset(
+            data_root=data_cfg["root"],
+            split="train",
+            modalities=data_cfg.get("modalities", ["t1", "t1ce", "t2", "flair"]),
+            context=data_cfg.get("num_slices_context", 3),
+            target_size=tuple(data_cfg.get("target_size", [240, 240])),
+            seed=cfg["seed"],
+        )
+        val_dataset = Brats2020Dataset(
+            data_root=data_cfg["root"],
+            split="val",
+            modalities=data_cfg.get("modalities", ["t1", "t1ce", "t2", "flair"]),
+            context=data_cfg.get("num_slices_context", 3),
+            target_size=tuple(data_cfg.get("target_size", [240, 240])),
+            seed=cfg["seed"] + 1,
+        )
 
     train_loader = DataLoader(
         train_dataset,
         batch_size=cfg["training"]["batch_size"],
-        shuffle=True
+        shuffle=True,
     )
 
     val_loader = DataLoader(
         val_dataset,
         batch_size=cfg["training"]["batch_size"],
-        shuffle=False
+        shuffle=False,
     )
 
     # --------------------------------------------------

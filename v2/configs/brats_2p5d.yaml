@@ -1,6 +1,6 @@
 seed: 42
 
-experiment: brats_2p5d_unet
+experiment: brats_2p5d_unet_v2
 
 model:
   in_channels: 12
@@ -14,12 +14,12 @@ training:
   batch_size: 2
   lr: 0.0002
   weight_decay: 0.00001
-  device: cpu
-  amp: false
+  device: cuda
+  amp: true
 
 data:
   synthetic: false
-  root: /path/to/BraTS
+  root: /mnt/data/BraTS2020
   modalities:
     - t1
     - t1ce
