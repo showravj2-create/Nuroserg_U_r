@@ -22,7 +22,8 @@ def evaluate(
     model,
     loader,
     loss_fn,
-    device
+    device,
+    amp_enabled=False,
 ):
     model.eval()
 
@@ -36,12 +37,9 @@ def evaluate(
             x = x.to(device)
             y = y.to(device)
 
-            logits = model(x)
-
-            loss = loss_fn(
-                logits,
-                y
-            )
+            with torch.autocast(device_type=device.type, enabled=amp_enabled):
+                logits = model(x)
+                loss = loss_fn(logits, y)
 
             total_loss += (
                 loss.item()
@@ -138,6 +136,7 @@ def main():
             context=data_cfg.get("num_slices_context", 3),
             target_size=tuple(data_cfg.get("target_size", [240, 240])),
             seed=cfg["seed"],
+            max_cached_patients=data_cfg.get("max_cached_patients", 2),
         )
         val_dataset = Brats2020Dataset(
             data_root=data_cfg["root"],
@@ -146,6 +145,7 @@ def main():
             context=data_cfg.get("num_slices_context", 3),
             target_size=tuple(data_cfg.get("target_size", [240, 240])),
             seed=cfg["seed"] + 1,
+            max_cached_patients=data_cfg.get("max_cached_patients", 2),
         )
 
     train_loader = DataLoader(
@@ -185,6 +185,8 @@ def main():
         lr=cfg["training"]["lr"],
         weight_decay=cfg["training"]["weight_decay"]
     )
+    amp_enabled = bool(cfg["training"].get("amp", False) and device.type == "cuda")
+    scaler = torch.cuda.amp.GradScaler(enabled=amp_enabled)
 
     # --------------------------------------------------
     # TRAINING
@@ -205,18 +207,13 @@ def main():
             x = x.to(device)
             y = y.to(device)
 
-            logits = model(x)
-
-            loss = loss_fn(
-                logits,
-                y
-            )
-
             optimizer.zero_grad()
-
-            loss.backward()
-
-            optimizer.step()
+            with torch.autocast(device_type=device.type, enabled=amp_enabled):
+                logits = model(x)
+                loss = loss_fn(logits, y)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
             running_loss += (
                 loss.item()
@@ -232,7 +229,8 @@ def main():
             model,
             val_loader,
             loss_fn,
-            device
+            device,
+            amp_enabled,
         )
 
         print(

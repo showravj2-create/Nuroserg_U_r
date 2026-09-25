@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from collections import OrderedDict
 
 import numpy as np
 import torch
@@ -23,12 +24,14 @@ class Brats2020Dataset(Dataset):
         context=3,
         target_size=(240, 240),
         seed=42,
+        max_cached_patients=2,
     ):
         self.data_root = Path(data_root)
         self.modality_names = modalities or ["t1", "t1ce", "t2", "flair"]
         self.context = int(context)
         self.target_size = tuple(target_size)
         self.seed = seed
+        self.max_cached_patients = max(1, int(max_cached_patients))
 
         patients = discover_patients(self.data_root)
         if len(patients) < 3:
@@ -39,22 +42,15 @@ class Brats2020Dataset(Dataset):
 
         self.patients = split_patients(patients, seed=self.seed)[split]
         self.samples = []
-        for patient_dir in self.patients:
+        self._patient_cache = OrderedDict()
+        for patient_index, patient_dir in enumerate(self.patients):
             patient = NiftiPatient(patient_dir)
             try:
-                images = patient.load_modalities(self.modality_names)
-                label = patient.load_segmentation()
+                label_shape = patient.load_segmentation().shape
+                for z in range(label_shape[2]):
+                    self.samples.append((patient_index, z))
             except FileNotFoundError:
                 continue
-
-            if not images:
-                continue
-
-            images = normalize_modalities(images, mask=label > 0)
-            for z in range(label.shape[2]):
-                x, y = self._slice_from_volume(images, label, z)
-                if x is not None:
-                    self.samples.append((x, y))
 
         if not self.samples:
             raise ValueError(
@@ -118,8 +114,25 @@ class Brats2020Dataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index):
-        x, y = self.samples[index]
+        patient_index, z = self.samples[index]
+        images, label = self._load_patient(patient_index)
+        x, y = self._slice_from_volume(images, label, z)
         return (
             torch.from_numpy(x),
             torch.from_numpy(y[None, :, :]),
         )
+
+    def _load_patient(self, patient_index):
+        if patient_index in self._patient_cache:
+            images, label = self._patient_cache.pop(patient_index)
+            self._patient_cache[patient_index] = (images, label)
+            return images, label
+
+        patient = NiftiPatient(self.patients[patient_index])
+        images = patient.load_modalities(self.modality_names)
+        label = patient.load_segmentation()
+        images = normalize_modalities(images, mask=label > 0)
+        self._patient_cache[patient_index] = (images, label)
+        while len(self._patient_cache) > self.max_cached_patients:
+            self._patient_cache.popitem(last=False)
+        return images, label

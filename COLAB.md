@@ -70,6 +70,10 @@ training:
   batch_size: 1
 ```
 
+The dataset loader reads slices lazily and keeps only two normalized patients in
+memory. For a T4, the supplied config also uses mixed precision, 128 x 128
+slices, and a smaller U-Net width.
+
 ## Notes
 
 - This project expects a real BraTS dataset, not a synthetic sample.
