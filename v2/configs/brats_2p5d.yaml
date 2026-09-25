@@ -19,7 +19,7 @@ training:
 
 data:
   synthetic: false
-  root: /mnt/data/BraTS2020
+  root: /content/brats2020/archive/BraTS2020_TrainingData/MICCAI_BraTS2020_TrainingData
   modalities:
     - t1
     - t1ce
