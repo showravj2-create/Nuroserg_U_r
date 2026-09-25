@@ -29,12 +29,14 @@ Expected layout:
 /content/BraTS2020/
   Training/
     BraTS20_Training_001/
-      BraTS20_Training_001_flair.nii.gz
-      BraTS20_Training_001_t1.nii.gz
-      BraTS20_Training_001_t1ce.nii.gz
-      BraTS20_Training_001_t2.nii.gz
-      BraTS20_Training_001_seg.nii.gz
+      BraTS20_Training_001_flair.nii
+      BraTS20_Training_001_t1.nii
+      BraTS20_Training_001_t1ce.nii
+      BraTS20_Training_001_t2.nii
+      BraTS20_Training_001_seg.nii
 ```
+
+  Both uncompressed `.nii` and compressed `.nii.gz` files are supported.
 
 ## 3) Validate the dataset
 

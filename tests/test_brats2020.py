@@ -3,8 +3,30 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 
+from src.data.brats import PatientGroupedSampler
 from src.data.nifti import NiftiPatient
 from src.data.splits import discover_patients
+
+
+def test_patient_grouped_sampler_keeps_slices_together():
+    class SampleDataset:
+        samples = [(patient, z) for patient in range(4) for z in range(5)]
+
+        def __len__(self):
+            return len(self.samples)
+
+    dataset = SampleDataset()
+    sampler = PatientGroupedSampler(dataset, seed=42)
+    indices = list(sampler)
+    patient_order = [dataset.samples[index][0] for index in indices]
+    patient_transitions = sum(
+        current != previous
+        for previous, current in zip(patient_order, patient_order[1:])
+    )
+
+    assert sorted(indices) == list(range(len(dataset)))
+    assert patient_transitions == len(set(patient_order)) - 1
+    assert list(sampler) == indices
 
 
 def test_nifti_patient_loader_supports_brats2020_names(tmp_path):

@@ -21,7 +21,9 @@ def ensure_repo_root():
 
 def maybe_download_brats(dataset_root: str):
     root = Path(dataset_root)
-    if root.exists() and any(root.rglob("*.nii.gz")):
+    if root.exists() and (
+        any(root.rglob("*.nii.gz")) or any(root.rglob("*.nii"))
+    ):
         print(f"BraTS dataset already exists at {root}")
         return
 

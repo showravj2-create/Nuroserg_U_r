@@ -33,12 +33,18 @@ class NiftiPatient:
     def __init__(self, patient_dir):
         self.patient_dir = Path(patient_dir)
 
+    def _find_matching_files(self, suffix):
+        matches = []
+        for extension in (".nii.gz", ".nii"):
+            matches.extend(self.patient_dir.glob(f"*_{suffix}{extension}"))
+        return sorted(matches)
+
     def _find_file(self, modality):
         modality = modality.lower()
         suffixes = self.MODALITY_ALIASES.get(modality, [self.MODALITIES.get(modality, modality)])
 
         for suffix in suffixes:
-            matches = list(self.patient_dir.glob(f"*_{suffix}.nii.gz"))
+            matches = self._find_matching_files(suffix)
             if matches:
                 return matches[0]
 
@@ -47,7 +53,7 @@ class NiftiPatient:
         )
 
     def _detect_modality_name(self, file_name):
-        basename = file_name.replace(".nii.gz", "")
+        basename = file_name.removesuffix(".nii.gz").removesuffix(".nii")
         for suffix in self.MODALITY_NAMES:
             if basename.endswith(f"_{suffix}"):
                 return suffix
@@ -57,7 +63,11 @@ class NiftiPatient:
         found = []
         seen = set()
 
-        for path in sorted(self.patient_dir.glob("*.nii.gz")):
+        paths = sorted(
+            list(self.patient_dir.glob("*.nii.gz"))
+            + list(self.patient_dir.glob("*.nii"))
+        )
+        for path in paths:
             modality = self._detect_modality_name(path.name)
             if modality is None or modality in seen:
                 continue
@@ -98,7 +108,7 @@ class NiftiPatient:
 
     def load_segmentation(self):
         for suffix in ["seg", "label", "labels"]:
-            matches = list(self.patient_dir.glob(f"*_{suffix}.nii.gz"))
+            matches = self._find_matching_files(suffix)
             if not matches:
                 continue
             image = nib.load(str(matches[0]))

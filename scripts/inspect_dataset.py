@@ -19,7 +19,10 @@ def inspect_patient(patient_dir):
     print(f"\nPatient: {patient_dir.name}")
 
     for modality in MODALITIES:
-        matches = list(patient_dir.glob(f"*_{modality}.nii.gz"))
+        matches = sorted(
+            list(patient_dir.glob(f"*_{modality}.nii.gz"))
+            + list(patient_dir.glob(f"*_{modality}.nii"))
+        )
 
         if not matches:
             print(f"  {modality:4s}: MISSING")

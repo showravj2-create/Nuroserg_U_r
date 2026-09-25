@@ -6,6 +6,7 @@ import torch
 import yaml
 
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -32,7 +33,7 @@ def evaluate(
 
     with torch.no_grad():
 
-        for x, y in loader:
+        for x, y in tqdm(loader, desc="Validation", unit="batch", leave=False):
 
             x = x.to(device)
             y = y.to(device)
@@ -148,10 +149,17 @@ def main():
             max_cached_patients=data_cfg.get("max_cached_patients", 2),
         )
 
+    train_sampler = None
+    if not data_cfg.get("synthetic", False):
+        from src.data.brats import PatientGroupedSampler
+
+        train_sampler = PatientGroupedSampler(train_dataset, seed=cfg["seed"])
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=cfg["training"]["batch_size"],
-        shuffle=True,
+        shuffle=train_sampler is None,
+        sampler=train_sampler,
     )
 
     val_loader = DataLoader(
@@ -198,11 +206,20 @@ def main():
         cfg["training"]["epochs"]
     ):
 
+        if train_sampler is not None:
+            train_sampler.set_epoch(epoch)
+
         model.train()
 
         running_loss = 0.0
 
-        for x, y in train_loader:
+        train_progress = tqdm(
+            train_loader,
+            desc=f"Epoch {epoch + 1}/{cfg['training']['epochs']}",
+            unit="batch",
+            dynamic_ncols=True,
+        )
+        for x, y in train_progress:
 
             x = x.to(device)
             y = y.to(device)
@@ -219,6 +236,7 @@ def main():
                 loss.item()
                 * x.size(0)
             )
+            train_progress.set_postfix(loss=f"{loss.item():.4f}")
 
         train_loss = (
             running_loss

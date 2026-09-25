@@ -7,11 +7,12 @@ def test_discover_patients(tmp_path):
     data_root = tmp_path / "dataset"
     data_root.mkdir()
 
-    for patient_id in ["BraTS-001", "BraTS-002", "BraTS-003"]:
+    for index, patient_id in enumerate(["BraTS-001", "BraTS-002", "BraTS-003"]):
         patient_dir = data_root / patient_id
         patient_dir.mkdir()
 
-        (patient_dir / f"{patient_id}_t1n.nii.gz").touch()
+        extension = ".nii" if index == 0 else ".nii.gz"
+        (patient_dir / f"{patient_id}_t1n{extension}").touch()
 
     patients = discover_patients(data_root)
 

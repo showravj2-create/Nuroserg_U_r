@@ -7,6 +7,7 @@ def discover_patients(data_root):
     Discover patient directories containing MRI data.
 
     Supports both the legacy lab layout and the BraTS 2020 training layout:
+    NIfTI volumes may be uncompressed (.nii) or compressed (.nii.gz).
 
     data_root/
         BraTS-001/
@@ -35,12 +36,15 @@ def discover_patients(data_root):
             f"Dataset directory does not exist: {data_root}"
         )
 
-    nifti_files = sorted(data_root.rglob("*.nii.gz"))
+    nifti_files = sorted(
+        list(data_root.rglob("*.nii.gz"))
+        + list(data_root.rglob("*.nii"))
+    )
     patients = sorted({path.parent for path in nifti_files if path.is_file()})
 
     if not patients:
         raise ValueError(
-            f"No patient directories containing .nii.gz files "
+            f"No patient directories containing .nii or .nii.gz files "
             f"were found in {data_root}"
         )
 

@@ -29,7 +29,14 @@ def main():
     missing = []
     for patient in patients[:5]:
         files = {p.name for p in patient.iterdir() if p.is_file()}
-        missing_modalities = [m for m in required_modalities if not any(name.endswith(f"_{m}.nii.gz") for name in files)]
+        missing_modalities = [
+            modality
+            for modality in required_modalities
+            if not any(
+                name.endswith((f"_{modality}.nii", f"_{modality}.nii.gz"))
+                for name in files
+            )
+        ]
         print(f"{patient.name}: missing={missing_modalities}")
         if missing_modalities:
             missing.append((patient.name, missing_modalities))

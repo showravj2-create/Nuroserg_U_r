@@ -78,3 +78,26 @@ def test_nifti_patient_loader(
     assert images["t1n"].shape == shape
 
     assert mask.shape == shape
+
+
+def test_nifti_patient_loader_supports_uncompressed_files(tmp_path):
+    patient_dir = tmp_path / "BraTS-nii"
+    patient_dir.mkdir()
+    shape = (8, 8, 4)
+
+    for modality in ["t1n", "t1c", "t2w", "t2f"]:
+        data = np.random.rand(*shape).astype("float32")
+        nib.save(
+            nib.Nifti1Image(data, np.eye(4)),
+            patient_dir / f"BraTS-nii_{modality}.nii",
+        )
+
+    segmentation = np.zeros(shape, dtype="float32")
+    nib.save(
+        nib.Nifti1Image(segmentation, np.eye(4)),
+        patient_dir / "BraTS-nii_seg.nii",
+    )
+
+    patient = NiftiPatient(patient_dir)
+    assert set(patient.load_modalities()) == {"t1n", "t1c", "t2w", "t2f"}
+    assert patient.load_segmentation().shape == shape

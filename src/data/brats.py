@@ -2,15 +2,46 @@ from __future__ import annotations
 
 from pathlib import Path
 from collections import OrderedDict
+import random
 
 import numpy as np
 import torch
 from scipy import ndimage
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Sampler
 
 from src.data.nifti import NiftiPatient
 from src.data.preprocessing import normalize_modalities
 from src.data.splits import discover_patients, split_patients
+
+
+class PatientGroupedSampler(Sampler):
+    """Shuffle patients and slices while keeping each patient's slices together."""
+
+    def __init__(self, dataset, seed=42):
+        self.dataset = dataset
+        self.seed = seed
+        self.epoch = 0
+
+    def set_epoch(self, epoch):
+        self.epoch = epoch
+
+    def __iter__(self):
+        grouped_indices = {}
+        for sample_index, (patient_index, _) in enumerate(self.dataset.samples):
+            grouped_indices.setdefault(patient_index, []).append(sample_index)
+
+        rng = random.Random(self.seed + self.epoch)
+        patient_indices = list(grouped_indices)
+        rng.shuffle(patient_indices)
+        indices = []
+        for patient_index in patient_indices:
+            patient_samples = grouped_indices[patient_index]
+            rng.shuffle(patient_samples)
+            indices.extend(patient_samples)
+        return iter(indices)
+
+    def __len__(self):
+        return len(self.dataset)
 
 
 class Brats2020Dataset(Dataset):
