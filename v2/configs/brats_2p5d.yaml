@@ -5,7 +5,7 @@ experiment: brats_2p5d_unet_v2
 model:
   in_channels: 12
   out_channels: 1
-  base_channels: 32
+  base_channels: 16
   dropout: 0.15
   attention: true
 
@@ -27,8 +27,8 @@ data:
     - flair
   num_slices_context: 3
   target_size:
-    - 240
-    - 240
+    - 128
+    - 128
   train_fraction: 0.70
   val_fraction: 0.15
   test_fraction: 0.15
